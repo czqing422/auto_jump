@@ -1,7 +1,12 @@
 import os
+import time
+from math import sqrt
+from image_process import ImageProcess
 
 RETRY_X, RETRY_Y = 500, 1700
-LINEAR_COEFFICIENT = float(600)/27  # (ms/mm)
+MS_MM_COEFFICIENT = float(600)/27  # (ms/mm)
+# MS_PIXEL_COEFFICIENT = float(778)/548  # (ms/mm)
+MS_PIXEL_COEFFICIENT = float(778)/600  # (ms/mm)
 SCREENSHOT_NAME = 'czq_screenshot.png'
 
 
@@ -26,7 +31,7 @@ class BaseMode(object):
 
     def tap_by_distance(self, distance):
         # 600~2.7
-        time = int(distance*LINEAR_COEFFICIENT)
+        time = int(distance*MS_MM_COEFFICIENT)
         self._tap(time)
 
     def get_distance(self):
@@ -51,8 +56,20 @@ class ManualMode(BaseMode):
 
 
 class AutoMode(BaseMode):
-    def get_distance(self):
-        pass
+    def tap_by_distance(self, distance):
+        # 778ms~548
+        tap_time = int(distance*MS_PIXEL_COEFFICIENT)
+        self._tap(tap_time)
 
-    def image_process(self, image_name=SCREENSHOT_NAME):
-        pass
+    def get_distance(self):
+        time.sleep(2)
+        self.screenshot()
+        image_process = ImageProcess()
+
+        rect = image_process.get_player_position()
+        player_x, player_y = image_process.get_player_position_by_rect(target='feet', *rect)
+        position = image_process.get_player_position_by_rect(target='head', *rect)
+
+        target_x, target_y = image_process.get_target_position(*position)
+
+        return sqrt((target_x-player_x)**2 + (target_y - player_y)**2)
