@@ -15,7 +15,7 @@ BACKGROUND_COLOR = {
     'upper': [],
 }
 PLAYER_COLOR = {
-    'lower': [65, 45, 45],
+    'lower': [75, 45, 45],
     'upper': [90, 65, 65],
 }
 ROI_Y_MAX = 1200
@@ -184,7 +184,7 @@ class ImageProcess(object):
         if target_rect is None:
             return False
         for target_element, standard_element in zip(target_rect[2:], standard_rect[2:]):
-            if abs(target_element - standard_element) > 5:
+            if abs(target_element - standard_element) > 10:
                 return False
         else:
             return True
