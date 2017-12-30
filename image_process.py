@@ -6,12 +6,13 @@ DEBUG = False
 KERNEL_SIZE = 30
 SCREENSHOT_NAME = 'czq_screenshot.png'
 SHADOW_COLOR = {
-    'lower': [0, 120, 175],
-    'upper': [185, 175, 180],
+    'lower': [],
+    'upper': [],
 }
+# to be defined by img
 BACKGROUND_COLOR = {
-    'lower': [0, 200, 254],
-    'upper': [185, 255, 255],
+    'lower': [],
+    'upper': [],
 }
 PLAYER_COLOR = {
     'lower': [65, 45, 45],
@@ -28,9 +29,31 @@ class ImageProcess(object):
         self.height = self.img.shape[0]
         self.width = self.img.shape[1]
         self.img_cpy = self.img
+        self.set_color()
 
     def refresh_img_cpy(self):
         self.img_cpy = self.img.copy()
+
+    def set_color(self):
+        # fixme: 这里还有问题
+        BACKGROUND_COLOR['lower'] = []
+        BACKGROUND_COLOR['upper'] = []
+        SHADOW_COLOR['lower'] = []
+        SHADOW_COLOR['upper'] = []
+        delta = 20
+        pixel = self.img[0][0]
+        for channel in pixel:
+            # background
+            lower = channel - delta
+            upper = channel + delta
+            BACKGROUND_COLOR['lower'].append(lower if lower > 0 else 0)
+            BACKGROUND_COLOR['upper'].append(upper if upper < 255 else 255)
+            # shadow
+            channel -= 80
+            lower = channel - delta
+            upper = channel + delta
+            SHADOW_COLOR['lower'].append(lower if lower > 0 else 0)
+            SHADOW_COLOR['upper'].append(upper if upper < 255 else 255)
 
     @staticmethod
     def finish():
@@ -90,16 +113,16 @@ class ImageProcess(object):
     @staticmethod
     def get_player_position_by_rect(x, y, w, h, target):
         if target == 'feet':
-            player_x = x + w/2
-            player_y = y + h*9/10
+            pl_x = x + w/2
+            pl_y = y + h*9/10
         elif target == 'head':
-            player_x = x + w/2
-            player_y = y
+            pl_x = x + w/2
+            pl_y = y
         else:
             print 'invaild target'
             # fixme
             assert 0
-        return player_x, player_y
+        return pl_x, pl_y
 
     def get_target_position(self, player_x, player_y):
         # get background mask
@@ -148,7 +171,7 @@ class ImageProcess(object):
             cv2.circle(img_filtered, target, 8, (255, 55, 15), 10)
             cv2.circle(img_filtered, center, 8, (55, 255, 155), 10)
             cv2.circle(img_filtered, center, int(radius), (55, 255, 155), 10)
-            self.show_in_normal_size('Target', np.hstack([self.img_cpy, img_filtered]), 50, width=800)
+            self.show_in_normal_size('Target', np.hstack([self.img_cpy, img_filtered]), -1, width=800)
         else:
             cv2.drawContours(self.img_cpy, contours, -1, (0, 0, 255), 3)
             cv2.circle(self.img_cpy, center, 8, (55, 255, 155), 10)
@@ -191,7 +214,7 @@ class ImageProcess(object):
             cv2.drawContours(img_filtered, contours, -1, (0, 0, 255), 3)
             cv2.rectangle(self.img_cpy, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.circle(self.img_cpy, (p_x, p_y), 8, (55, 255, 155), 10)
-            self.show_in_normal_size('Player', np.hstack([self.img_cpy, img_filtered]), 50, width=800)
+            self.show_in_normal_size('Player', np.hstack([self.img_cpy, img_filtered]), -1, width=800)
         else:
             cv2.drawContours(self.img_cpy, contours, -1, (0, 0, 255), 3)
             cv2.circle(self.img_cpy, (p_x, p_y), 8, (55, 255, 155), 10)
