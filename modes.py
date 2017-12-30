@@ -6,7 +6,7 @@ from image_process import ImageProcess
 RETRY_X, RETRY_Y = 500, 1700
 MS_MM_COEFFICIENT = float(600)/27  # (ms/mm)
 # MS_PIXEL_COEFFICIENT = float(778)/548  # (ms/mm)
-MS_PIXEL_COEFFICIENT = float(778)/600  # (ms/mm)
+MS_PIXEL_COEFFICIENT = float(778)/570  # (ms/mm)
 SCREENSHOT_NAME = 'czq_screenshot.png'
 
 

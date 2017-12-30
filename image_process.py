@@ -174,7 +174,7 @@ class ImageProcess(object):
             self.show_in_normal_size('Target', np.hstack([self.img_cpy, img_filtered]), -1, width=800)
         else:
             cv2.drawContours(self.img_cpy, contours, -1, (0, 0, 255), 3)
-            cv2.circle(self.img_cpy, center, 8, (55, 255, 155), 10)
+            cv2.circle(self.img_cpy, target, 8, (55, 255, 155), 10)
             self.show_in_normal_size('Target', self.img_cpy, 50, width=800)
 
         return target
