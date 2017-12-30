@@ -62,7 +62,7 @@ class AutoMode(BaseMode):
         self._tap(tap_time)
 
     def get_distance(self):
-        time.sleep(2)
+        time.sleep(1)
         self.screenshot()
         image_process = ImageProcess()
 

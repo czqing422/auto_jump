@@ -16,7 +16,7 @@ BACKGROUND_COLOR = {
 }
 PLAYER_COLOR = {
     'lower': [65, 45, 45],
-    'upper': [100, 75, 75],
+    'upper': [90, 65, 65],
 }
 ROI_Y_MAX = 1200
 ROI_Y_MIN = 300
@@ -35,17 +35,17 @@ class ImageProcess(object):
         self.img_cpy = self.img.copy()
 
     def set_color(self):
-        # fixme: 这里还有问题
+        # fixme:
         BACKGROUND_COLOR['lower'] = []
         BACKGROUND_COLOR['upper'] = []
         SHADOW_COLOR['lower'] = []
         SHADOW_COLOR['upper'] = []
-        delta = 20
+        delta = 30
         pixel = self.img[0][0]
         for channel in pixel:
             # background
             lower = channel - delta
-            upper = channel + delta
+            upper = channel# + delta
             BACKGROUND_COLOR['lower'].append(lower if lower > 0 else 0)
             BACKGROUND_COLOR['upper'].append(upper if upper < 255 else 255)
             # shadow
@@ -181,6 +181,8 @@ class ImageProcess(object):
 
     @staticmethod
     def judge_rect(target_rect, standard_rect):
+        if target_rect is None:
+            return False
         for target_element, standard_element in zip(target_rect[2:], standard_rect[2:]):
             if abs(target_element - standard_element) > 5:
                 return False
