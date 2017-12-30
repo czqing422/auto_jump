@@ -117,7 +117,7 @@ class ImageProcess(object):
             pl_y = y + h*9/10
         elif target == 'head':
             pl_x = x + w/2
-            pl_y = y
+            pl_y = y + h*2/10
         else:
             print 'invaild target'
             # fixme
