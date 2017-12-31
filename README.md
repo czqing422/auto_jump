@@ -1,5 +1,5 @@
 # auto_jump
-微信小程序“跳一跳”的自动化解决方案\<br>
+微信小程序“跳一跳”的自动化解决方案  
 adb安装教程：http://blog.csdn.net/u011217649/article/details/52965296
 ## 手动模式
 python main --manual_mode
