@@ -5,7 +5,6 @@ from image_process import ImageProcess
 
 RETRY_X, RETRY_Y = 500, 1700
 MS_MM_COEFFICIENT = float(600)/27  # (ms/mm)
-# MS_PIXEL_COEFFICIENT = float(778)/548  # (ms/mm)
 MS_PIXEL_COEFFICIENT = float(778)/570  # (ms/mm)
 SCREENSHOT_NAME = 'czq_screenshot.png'
 
@@ -26,13 +25,13 @@ class BaseMode(object):
         os.system('adb shell input tap {x} {y}'.format(x=x, y=y))
 
     @staticmethod
-    def _tap(time, x=RETRY_X, y=RETRY_Y):
-        os.system('adb shell input swipe {x1} {y1} {x2} {y2} {time}'.format(x1=x, y1=y, x2=x, y2=y, time=time))
+    def _tap(tap_time, x=RETRY_X, y=RETRY_Y):
+        os.system('adb shell input swipe {x1} {y1} {x2} {y2} {time}'.format(x1=x, y1=y, x2=x, y2=y, time=tap_time))
 
     def tap_by_distance(self, distance):
         # 600~2.7
-        time = int(distance*MS_MM_COEFFICIENT)
-        self._tap(time)
+        tap_time = int(distance*MS_MM_COEFFICIENT)
+        self._tap(tap_time)
 
     def get_distance(self):
         raise NotImplemented
@@ -62,7 +61,7 @@ class AutoMode(BaseMode):
         self._tap(tap_time)
 
     def get_distance(self):
-        time.sleep(1)
+        time.sleep(1.5)
         self.screenshot()
         image_process = ImageProcess()
 
@@ -70,6 +69,6 @@ class AutoMode(BaseMode):
         player_x, player_y = image_process.get_player_position_by_rect(target='feet', *rect)
         position = image_process.get_player_position_by_rect(target='head', *rect)
 
-        target_x, target_y = image_process.get_target_position(*position)
+        target_x, target_y = image_process.get_target_position(rect)
 
         return sqrt((target_x-player_x)**2 + (target_y - player_y)**2)

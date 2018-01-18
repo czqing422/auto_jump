@@ -1,19 +1,20 @@
 import cv2
 import numpy as np
 from math import tan, pi, sqrt
+from region_grow import RegionGrow
 
 DEBUG = False
 KERNEL_SIZE = 30
 SCREENSHOT_NAME = 'czq_screenshot.png'
+# to be defined by img
 SHADOW_COLOR = {
     'lower': [],
     'upper': [],
 }
-# to be defined by img
-BACKGROUND_COLOR = {
-    'lower': [],
-    'upper': [],
-}
+# BACKGROUND_COLOR = {
+#     'lower': [],
+#     'upper': [],
+# }
 PLAYER_COLOR = {
     'lower': [75, 45, 45],
     'upper': [90, 65, 65],
@@ -35,23 +36,24 @@ class ImageProcess(object):
         self.img_cpy = self.img.copy()
 
     def set_color(self):
-        # fixme:
-        BACKGROUND_COLOR['lower'] = []
-        BACKGROUND_COLOR['upper'] = []
+        # fixme:iteration version region grow is needed
+        # BACKGROUND_COLOR['lower'] = []
+        # BACKGROUND_COLOR['upper'] = []
         SHADOW_COLOR['lower'] = []
         SHADOW_COLOR['upper'] = []
-        delta = 30
-        pixel = self.img[0][0]
-        for channel in pixel:
-            # background
-            lower = channel - delta
-            upper = channel# + delta
-            BACKGROUND_COLOR['lower'].append(lower if lower > 0 else 0)
-            BACKGROUND_COLOR['upper'].append(upper if upper < 255 else 255)
+        delta = 10
+        up_pixel = self.img[0][0]
+        down_pixel = self.img[-1][0]
+        for up_channel, down_channel in zip(up_pixel, down_pixel):
+            # # background
+            # lower = down_channel# - delta
+            # upper = up_channel# + delta
+            # BACKGROUND_COLOR['lower'].append(lower if lower > 0 else 0)
+            # BACKGROUND_COLOR['upper'].append(upper if upper < 255 else 255)
             # shadow
-            channel -= 80
-            lower = channel - delta
-            upper = channel + delta
+            up_channel -= 80
+            lower = up_channel - delta
+            upper = up_channel + delta
             SHADOW_COLOR['lower'].append(lower if lower > 0 else 0)
             SHADOW_COLOR['upper'].append(upper if upper < 255 else 255)
 
@@ -100,15 +102,17 @@ class ImageProcess(object):
             mask = cv2.bitwise_not(mask)
         return mask
 
-    def get_triangle_vertex(self, player_x, player_y, angle=30):
+    def get_triangle_vertex(self, px, py, angle=30):
         angle = angle * pi / 180
-        left_y = player_y + player_x * tan(angle)
-        right_y = player_y + (self.width - player_x) * tan(angle)
-        return np.array([[player_x, player_y], [0, left_y], [0, self.height], [self.width, self.height],
+        left_y = py + px * tan(angle)
+        right_y = py + (self.width - px) * tan(angle)
+        return np.array([[px, py], [0, left_y], [0, self.height], [self.width, self.height],
                          [self.width, right_y]], np.int32)
 
-    def get_rect_vertex(self, y_lower, y_upper):
-        return np.array([[0, y_lower], [self.width, y_lower], [self.width, y_upper], [0, y_upper]], np.int32)
+    def get_rect_vertex(self, y_lower, y_upper, x_lower=0, x_upper=None):
+        if x_upper is None:
+            x_upper = self.width
+        return np.array([[x_lower, y_lower], [x_upper, y_lower], [x_upper, y_upper], [x_lower, y_upper]], np.int32)
 
     @staticmethod
     def get_player_position_by_rect(x, y, w, h, target):
@@ -117,31 +121,36 @@ class ImageProcess(object):
             pl_y = y + h*9/10
         elif target == 'head':
             pl_x = x + w/2
-            pl_y = y + h*2/10
+            pl_y = y + h*4/10
         else:
-            print 'invaild target'
+            print 'invalid target'
             # fixme
             assert 0
         return pl_x, pl_y
 
-    def get_target_position(self, player_x, player_y):
+    def get_target_position(self, rect):
         # get background mask
-        background_mask = self.get_mask(BACKGROUND_COLOR, True)
+        region_grow = RegionGrow(self.img)
+        background_mask = region_grow.run()
+        background_mask = cv2.inRange(background_mask, 0, 51)
+        x, y, w, h = rect
+        cv2.rectangle(background_mask, (x, y), (x + w, y + h), (0, 0, 0), -1)
+        ImageProcess.show_in_normal_size('bk_mask', background_mask, 50)
+
+        # background_mask = self.get_mask(BACKGROUND_COLOR, True)
         shadow_mask = self.get_mask(SHADOW_COLOR, True)
         mask = cv2.bitwise_and(shadow_mask, background_mask)
 
         # get triangle roi
-        pts = self.get_triangle_vertex(player_x, player_y)
+        head_position = self.get_player_position_by_rect(target='head', *rect)
+        pts = self.get_triangle_vertex(*head_position)
         cv2.fillPoly(mask, [pts], 0)
-        # cv2.polylines(self.img_cpy, [pts], True, (55, 255, 155), 10)
 
         # get rect roi
         pts = self.get_rect_vertex(0, ROI_Y_MIN)
         cv2.fillPoly(mask, [pts], 0)
         pts = self.get_rect_vertex(ROI_Y_MAX, self.height)
         cv2.fillPoly(mask, [pts], 0)
-        # roi_image = self.img[ROI_Y_MIN:ROI_Y_MAX, :]
-        # mask = mask[ROI_Y_MIN:ROI_Y_MAX, :]
 
         # get contour of the target
         contours = None
@@ -150,9 +159,10 @@ class ImageProcess(object):
             # until only one contour is founded
             kernel = self.get_kernel(kernel_size)
             new_mask = cv2.erode(mask, kernel)
-            new_mask = cv2.dilate(new_mask, kernel)
+            new_mask = cv2.dilate(new_mask, kernel*3/2)
+            ImageProcess.show_in_normal_size('bk_mask', new_mask, 50)
             contours, hierarchy = cv2.findContours(new_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            kernel_size += 4
+            kernel_size += 1
             # fixme
             # assert kernel_size < 60
             if kernel_size > 60:
@@ -228,10 +238,9 @@ class ImageProcess(object):
 if __name__ == '__main__':
     image_process = ImageProcess()
 
-    rect = image_process.get_player_position()
-    player_x, player_y = image_process.get_player_position_by_rect(target='feet', *rect)
-    position = image_process.get_player_position_by_rect(target='head', *rect)
+    player_rect = image_process.get_player_position()
+    player_x, player_y = image_process.get_player_position_by_rect(target='feet', *player_rect)
 
-    target_x, target_y = image_process.get_target_position(*position)
+    target_x, target_y = image_process.get_target_position(player_rect)
 
     distance = sqrt((target_x-player_x)**2 + (target_y - player_y)**2)
